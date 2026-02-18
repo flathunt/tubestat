@@ -48,13 +48,13 @@ def get_color(key):
     return f'{ESC}[{bg}m{ESC}[{fg}m'
 
 
-def card_height(text):
-    lines = textwrap.wrap(text, width=CARD_W - 4) or ['']
+def card_height(text, width=CARD_W):
+    lines = textwrap.wrap(text, width=width - 4) or ['']
     return len(lines) + 2  # top border + content lines + bottom border
 
 
-def draw_card(key, text, row, col, title=None):
-    text_w = CARD_W - 4
+def draw_card(key, text, row, col, title=None, width=CARD_W):
+    text_w = width - 4
     color = get_color(key)
 
     if title is None:
@@ -62,11 +62,11 @@ def draw_card(key, text, row, col, title=None):
 
     if title:
         # Top border: ┌── LABEL ──...──┐
-        top_right = '─' * max(0, CARD_W - len(title) - 8)
+        top_right = '─' * max(0, width - len(title) - 8)
         out = goto(row, col) + color + f'┌── {BOLD}{title}{RESET}{color} ──{top_right}┐' + RESET
     else:
         # Plain top border with no label
-        out = goto(row, col) + color + '┌' + '─' * (CARD_W - 2) + '┐' + RESET
+        out = goto(row, col) + color + '┌' + '─' * (width - 2) + '┐' + RESET
 
     lines = textwrap.wrap(text, width=text_w) or ['']
     severe = 'severe' in text.lower()
@@ -83,15 +83,15 @@ def draw_card(key, text, row, col, title=None):
         out += goto(row + 1 + i, col) + color + f'│ {prefix}{line}{pad} │' + RESET
 
     # Bottom border
-    out += goto(row + len(lines) + 1, col) + color + '└' + '─' * (CARD_W - 2) + '┘' + RESET
+    out += goto(row + len(lines) + 1, col) + color + '└' + '─' * (width - 2) + '┘' + RESET
 
     sys.stdout.write(out)
 
 
-def overlaps(r1, c1, h1, r2, c2, h2):
+def overlaps(r1, c1, h1, w1, r2, c2, h2, w2):
     """True if the two cards overlap (with a 1-row vertical gap)."""
     return (r1 + h1 > r2 and r1 < r2 + h2 + 1 and
-            c1 + CARD_W > c2 and c1 < c2 + CARD_W)
+            c1 + w1 > c2 and c1 < c2 + w2)
 
 
 def terminal_size():
@@ -115,13 +115,21 @@ def draw_screen(disruptions):
     random.shuffle(items)
 
     # Random placement with collision detection across the full screen
-    placed = []
+    placed = []  # (row, col, height, width)
 
     for key, text in items:
-        h = card_height(text)
+        if key == 'updated':
+            # Shrink to fit: width = text length + 2 borders + 2 padding spaces
+            w = len(text) + 4
+            title = ''
+        else:
+            w = CARD_W
+            title = None
+
+        h = card_height(text, w)
 
         max_row = scr_lines - h
-        max_col = scr_cols - CARD_W
+        max_col = scr_cols - w
 
         if max_row < 1 or max_col < 1:
             continue
@@ -130,14 +138,14 @@ def draw_screen(disruptions):
         for _ in range(100):
             r = random.randint(1, max_row)
             c = random.randint(1, max_col)
-            if not any(overlaps(r, c, h, pr, pc, ph) for pr, pc, ph in placed):
+            if not any(overlaps(r, c, h, w, pr, pc, ph, pw) for pr, pc, ph, pw in placed):
                 pos = (r, c)
                 break
 
         if pos:
             r, c = pos
-            placed.append((r, c, h))
-            draw_card(key, text, r, c, title='' if key == 'updated' else None)
+            placed.append((r, c, h, w))
+            draw_card(key, text, r, c, title=title, width=w)
 
     sys.stdout.flush()
 
