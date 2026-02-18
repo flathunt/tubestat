@@ -8,6 +8,7 @@ import subprocess
 import sys
 import textwrap
 import time
+import traceback
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -173,16 +174,35 @@ def cleanup(sig=None, frame=None):
     sys.exit(0)
 
 
+def draw_status(msg):
+    """Show a single centred message — keeps the screen alive so the user
+    can tell the script is running rather than hung."""
+    scr_lines, scr_cols = terminal_size()
+    sys.stdout.write('\033[H\033[2J')
+    col = max(1, (scr_cols - len(msg)) // 2)
+    row = scr_lines // 2
+    sys.stdout.write(f'\033[{row};{col}f{msg}')
+    sys.stdout.flush()
+
+
 def main():
     signal.signal(signal.SIGINT, cleanup)
 
-    setterm('--blank=force')
     subprocess.run(['sudo', '/usr/local/bin/dim'], stderr=subprocess.DEVNULL)
     setterm('--cursor', 'off')
 
     while True:
-        tubelines = load_tubelines()
-        disruptions = fetch_disruptions(tubelines)
+        draw_status('Checking TFL status...')
+
+        try:
+            tubelines = load_tubelines()
+            disruptions = fetch_disruptions(tubelines)
+        except Exception as e:
+            with open('/tmp/newtubestat.log', 'a') as f:
+                f.write(f'{datetime.now()}: {traceback.format_exc()}\n')
+            draw_status(f'Error: {e}  — retrying in 30s')
+            time.sleep(30)
+            continue
 
         if disruptions:
             setterm('--blank=poke')
