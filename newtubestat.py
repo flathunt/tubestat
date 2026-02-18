@@ -61,12 +61,12 @@ def draw_card(key, text, row, col, title=None, width=CARD_W):
         title = key.upper()
 
     if title:
-        # Top border: ┌── LABEL ──...──┐
+        # Top border: ╭── LABEL ──...──╮
         top_right = '─' * max(0, width - len(title) - 8)
-        out = goto(row, col) + color + f'┌── {BOLD}{title}{RESET}{color} ──{top_right}┐' + RESET
+        out = goto(row, col) + color + f'╭── {BOLD}{title}{RESET}{color} ──{top_right}╮' + RESET
     else:
         # Plain top border with no label
-        out = goto(row, col) + color + '┌' + '─' * (width - 2) + '┐' + RESET
+        out = goto(row, col) + color + '╭' + '─' * (width - 2) + '╮' + RESET
 
     lines = textwrap.wrap(text, width=text_w) or ['']
     severe = 'severe' in text.lower()
@@ -83,7 +83,7 @@ def draw_card(key, text, row, col, title=None, width=CARD_W):
         out += goto(row + 1 + i, col) + color + f'│ {prefix}{line}{pad} │' + RESET
 
     # Bottom border
-    out += goto(row + len(lines) + 1, col) + color + '└' + '─' * (width - 2) + '┘' + RESET
+    out += goto(row + len(lines) + 1, col) + color + '╰' + '─' * (width - 2) + '╯' + RESET
 
     sys.stdout.write(out)
 
