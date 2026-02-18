@@ -48,9 +48,21 @@ def get_color(key):
     return f'{ESC}[{bg}m{ESC}[{fg}m'
 
 
+SEVERE_PREFIX_VIS = 11  # visible width of "⚠ SEVERE  "
+
+
+def wrap_text(text, text_w):
+    """Wrap text for a card, shrinking line 1 when the SEVERE prefix will appear."""
+    if 'severe' in text.lower():
+        # Use a placeholder indent so textwrap reserves space for the prefix on line 1
+        placeholder = ' ' * SEVERE_PREFIX_VIS
+        wrapped = textwrap.wrap(text, width=text_w, initial_indent=placeholder)
+        return ([wrapped[0][SEVERE_PREFIX_VIS:]] + wrapped[1:]) if wrapped else ['']
+    return textwrap.wrap(text, width=text_w) or ['']
+
+
 def card_height(text, width=CARD_W):
-    lines = textwrap.wrap(text, width=width - 4) or ['']
-    return len(lines) + 2  # top border + content lines + bottom border
+    return len(wrap_text(text, width - 4)) + 2  # top border + content lines + bottom border
 
 
 def draw_card(key, text, row, col, title=None, width=CARD_W):
@@ -68,14 +80,14 @@ def draw_card(key, text, row, col, title=None, width=CARD_W):
         # Plain top border with no label
         out = goto(row, col) + color + '╭' + '─' * (width - 2) + '╮' + RESET
 
-    lines = textwrap.wrap(text, width=text_w) or ['']
+    lines = wrap_text(text, text_w)
     severe = 'severe' in text.lower()
     _, fg = LINE_COLORS.get(key.lower(), DEFAULT_COLOR)
 
     for i, line in enumerate(lines):
         if i == 0 and severe:
             prefix = f'{BLINK}{ESC}[{fg}m⚠ SEVERE{RESET}{color}  '
-            prefix_vis = 11
+            prefix_vis = SEVERE_PREFIX_VIS
         else:
             prefix = ''
             prefix_vis = 0
