@@ -11,7 +11,7 @@ while :
 do
   . /home/marcusc/git/pylearn/lines.txt
   curl https://api.tfl.gov.uk/$TUBELINES/Disruption 2> /dev/null | jq -r '.[] | .description' > $tfile
-  
+
   if [ -s $tfile ]
   then
     setterm --term linux --blank=poke 2>/dev/null
