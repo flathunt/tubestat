@@ -153,8 +153,9 @@ def load_tubelines():
 
 def fetch_disruptions(tubelines):
     url = f'https://api.tfl.gov.uk/{tubelines}/Disruption'
+    req = urllib.request.Request(url, headers={'User-Agent': 'curl/7.88'})
     try:
-        with urllib.request.urlopen(url, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.load(resp)
         return [item['description'] for item in data if 'description' in item]
     except Exception:
