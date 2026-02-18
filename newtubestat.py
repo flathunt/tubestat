@@ -99,33 +99,30 @@ def terminal_size():
 def draw_screen(disruptions):
     scr_lines, scr_cols = terminal_size()
     now = datetime.now().strftime('%a %d %b %H:%M:%S')
-    title = 'TUBE STATUS MONITOR'
 
     sys.stdout.write('\033[H\033[2J')
 
-    # Header
-    gap = max(1, scr_cols - len(title) - len(now) - 2)
-    sys.stdout.write(f'\033[1;1f  {BOLD}{title}{RESET}{" " * gap}{now}')
+    # Build items: one card per disruption, plus a timestamp card
+    items = [(desc.split()[0].lower() if desc.split() else 'unknown', desc)
+             for desc in sorted(set(disruptions))]
+    items.append(('updated', f'Last updated: {now}'))
+    random.shuffle(items)
 
-    # Separator
-    sys.stdout.write(f'\033[2;1f  {"═" * (scr_cols - 2)}')
+    # Random placement with collision detection across the full screen
+    placed = []
 
-    # Random placement with collision detection
-    placed = []  # list of (row, col, height)
+    for key, text in items:
+        h = card_height(text)
 
-    for desc in sorted(set(disruptions)):
-        key = (desc.split()[0] if desc.split() else 'unknown').lower()
-        h = card_height(desc)
-
-        max_row = scr_lines - h - 1
+        max_row = scr_lines - h
         max_col = scr_cols - CARD_W
 
-        if max_row < 3 or max_col < 1:
-            continue  # card too large to fit
+        if max_row < 1 or max_col < 1:
+            continue
 
         pos = None
         for _ in range(100):
-            r = random.randint(3, max_row)
+            r = random.randint(1, max_row)
             c = random.randint(1, max_col)
             if not any(overlaps(r, c, h, pr, pc, ph) for pr, pc, ph in placed):
                 pos = (r, c)
@@ -134,10 +131,8 @@ def draw_screen(disruptions):
         if pos:
             r, c = pos
             placed.append((r, c, h))
-            draw_card(key, desc, r, c)
+            draw_card(key, text, r, c)
 
-    # Footer
-    sys.stdout.write(f'\033[{scr_lines};1f  Last updated: {now}')
     sys.stdout.flush()
 
 
