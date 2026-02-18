@@ -124,27 +124,36 @@ draw_screen() {
   sep=$(printf '═%.0s' $(seq 1 $(( scr_cols - 2 )) ))
   printf "\033[2;1f  ${sep}"
 
-  # Cards at random positions
+  # Column-based layout: track next available row per column to prevent overlap
+  local num_cols=$(( scr_cols / CARD_W ))
+  if [ "$num_cols" -lt 1 ]; then num_cols=1; fi
+
+  declare -a col_row
+  for (( c=0; c<num_cols; c++ )); do col_row[$c]=3; done
+
   sort -u "$disruptions_file" | while IFS= read -r desc; do
     local line_key
     line_key=$(echo "$desc" | awk '{print tolower($1)}')
 
-    # Calculate card height: wrapped lines + top border + bottom border
     local text_w=$(( CARD_W - 4 ))
-    local wrapped_lines
-    wrapped_lines=$(echo "$desc" | fold -s -w "$text_w" | wc -l)
-    local card_h=$(( wrapped_lines + 2 ))
+    local card_h=$(( $(echo "$desc" | fold -s -w "$text_w" | wc -l) + 2 ))
 
-    # Random position: rows 3..(scr_lines - card_h), cols 1..(scr_cols - CARD_W)
-    local max_row=$(( scr_lines - card_h ))
-    local max_col=$(( scr_cols - CARD_W ))
-    if [ "$max_row" -lt 3 ]; then max_row=3; fi
-    if [ "$max_col" -lt 1 ]; then max_col=1; fi
+    # Pick the column whose next available row is lowest (greedy bin-packing)
+    local best_col=0
+    for (( c=1; c<num_cols; c++ )); do
+      if [ "${col_row[$c]}" -lt "${col_row[$best_col]}" ]; then
+        best_col=$c
+      fi
+    done
 
-    local rand_row=$(( RANDOM % (max_row - 2) + 3 ))
-    local rand_col=$(( RANDOM % max_col + 1 ))
+    local start_row=${col_row[$best_col]}
+    local start_col=$(( best_col * CARD_W + 1 ))
 
-    draw_card "$line_key" "$desc" "$rand_row" "$rand_col"
+    # Only draw if card fits above the footer
+    if [ $(( start_row + card_h )) -lt "$scr_lines" ]; then
+      draw_card "$line_key" "$desc" "$start_row" "$start_col"
+      col_row[$best_col]=$(( start_row + card_h + 1 ))
+    fi
   done
 
   # Footer at bottom of screen
