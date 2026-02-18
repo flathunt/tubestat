@@ -109,8 +109,13 @@ def draw_screen(disruptions):
     sys.stdout.write('\033[H\033[2J')
 
     # Build items: one card per disruption, plus a timestamp card
-    items = [(desc.split()[0].lower() if desc.split() else 'unknown', desc)
-             for desc in sorted(set(disruptions))]
+    # Key comes from the first word of the raw description; text has the
+    # "Line Name: " prefix stripped since the card title already shows it.
+    items = []
+    for desc in sorted(set(disruptions)):
+        key = (desc.split()[0] if desc.split() else 'unknown').lower()
+        text = desc.split(': ', 1)[1] if ': ' in desc else desc
+        items.append((key, text))
     items.append(('updated', f'Last updated: {now}'))
     random.shuffle(items)
 
