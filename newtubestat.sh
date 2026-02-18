@@ -124,37 +124,56 @@ draw_screen() {
   sep=$(printf '═%.0s' $(seq 1 $(( scr_cols - 2 )) ))
   printf "\033[2;1f  ${sep}"
 
-  # Column-based layout: track next available row per column to prevent overlap
-  local num_cols=$(( scr_cols / CARD_W ))
-  if [ "$num_cols" -lt 1 ]; then num_cols=1; fi
+  # Random placement with collision detection
+  # Use process substitution (not a pipe) so placed_cards array persists across iterations
+  declare -a placed_cards=()
 
-  declare -a col_row
-  for (( c=0; c<num_cols; c++ )); do col_row[$c]=3; done
-
-  sort -u "$disruptions_file" | while IFS= read -r desc; do
+  while IFS= read -r desc; do
     local line_key
     line_key=$(echo "$desc" | awk '{print tolower($1)}')
 
     local text_w=$(( CARD_W - 4 ))
     local card_h=$(( $(echo "$desc" | fold -s -w "$text_w" | wc -l) + 2 ))
 
-    # Pick the column whose next available row is lowest (greedy bin-packing)
-    local best_col=0
-    for (( c=1; c<num_cols; c++ )); do
-      if [ "${col_row[$c]}" -lt "${col_row[$best_col]}" ]; then
-        best_col=$c
+    local max_row=$(( scr_lines - card_h - 1 ))
+    local max_col=$(( scr_cols - CARD_W ))
+    if [ "$max_row" -lt 3 ]; then max_row=3; fi
+    if [ "$max_col" -lt 1 ]; then max_col=1; fi
+
+    local found=false
+    local try_row try_col
+    local attempt
+    for (( attempt=0; attempt<100; attempt++ )); do
+      try_row=$(( RANDOM % (max_row - 2) + 3 ))
+      try_col=$(( RANDOM % max_col + 1 ))
+
+      local overlap=false
+      local entry
+      for entry in "${placed_cards[@]}"; do
+        local pr pc ph
+        read -r pr pc ph <<< "$entry"
+        # Rectangles overlap if their ranges intersect on both axes
+        # Add 1-row gap by inflating the height check
+        if [ $(( try_row + card_h )) -gt "$pr" ] && \
+           [ "$try_row" -lt $(( pr + ph + 1 )) ] && \
+           [ $(( try_col + CARD_W )) -gt "$pc" ] && \
+           [ "$try_col" -lt $(( pc + CARD_W )) ]; then
+          overlap=true
+          break
+        fi
+      done
+
+      if ! $overlap; then
+        found=true
+        break
       fi
     done
 
-    local start_row=${col_row[$best_col]}
-    local start_col=$(( best_col * CARD_W + 1 ))
-
-    # Only draw if card fits above the footer
-    if [ $(( start_row + card_h )) -lt "$scr_lines" ]; then
-      draw_card "$line_key" "$desc" "$start_row" "$start_col"
-      col_row[$best_col]=$(( start_row + card_h + 1 ))
+    if $found; then
+      placed_cards+=("$try_row $try_col $card_h")
+      draw_card "$line_key" "$desc" "$try_row" "$try_col"
     fi
-  done
+  done < <(sort -u "$disruptions_file")
 
   # Footer at bottom of screen
   printf "\033[${scr_lines};1f  Last updated: ${now}"
