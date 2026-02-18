@@ -53,14 +53,20 @@ def card_height(text):
     return len(lines) + 2  # top border + content lines + bottom border
 
 
-def draw_card(key, text, row, col):
+def draw_card(key, text, row, col, title=None):
     text_w = CARD_W - 4
     color = get_color(key)
-    label = key.upper()
 
-    # Top border: ┌── LABEL ──...──┐
-    top_right = '─' * max(0, CARD_W - len(label) - 8)
-    out = goto(row, col) + color + f'┌── {BOLD}{label}{RESET}{color} ──{top_right}┐' + RESET
+    if title is None:
+        title = key.upper()
+
+    if title:
+        # Top border: ┌── LABEL ──...──┐
+        top_right = '─' * max(0, CARD_W - len(title) - 8)
+        out = goto(row, col) + color + f'┌── {BOLD}{title}{RESET}{color} ──{top_right}┐' + RESET
+    else:
+        # Plain top border with no label
+        out = goto(row, col) + color + '┌' + '─' * (CARD_W - 2) + '┐' + RESET
 
     lines = textwrap.wrap(text, width=text_w) or ['']
     severe = 'severe' in text.lower()
@@ -131,7 +137,7 @@ def draw_screen(disruptions):
         if pos:
             r, c = pos
             placed.append((r, c, h))
-            draw_card(key, text, r, c)
+            draw_card(key, text, r, c, title='' if key == 'updated' else None)
 
     sys.stdout.flush()
 
