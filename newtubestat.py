@@ -48,7 +48,7 @@ def get_color(key):
     return f'{ESC}[{bg}m{ESC}[{fg}m'
 
 
-SEVERE_PREFIX_VIS = 11  # visible width of "⚠ SEVERE ⚠ "
+SEVERE_PREFIX_VIS = 12  # visible width of "⚠ SEVERE ⚠ "
 
 
 def wrap_text(text, text_w):
@@ -86,7 +86,7 @@ def draw_card(key, text, row, col, title=None, width=CARD_W):
 
     for i, line in enumerate(lines):
         if i == 0 and severe:
-            prefix = f'{BLINK}{ESC}[{fg}m⚠ SEVERE{RESET}{color}  '
+            prefix = f'{BLINK}{ESC}[{fg}m⚠ SEVERE ⚠{RESET}{color} '
             prefix_vis = SEVERE_PREFIX_VIS
         else:
             prefix = ''
