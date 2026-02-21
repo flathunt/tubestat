@@ -48,7 +48,7 @@ def get_color(key):
     return f'{ESC}[{bg}m{ESC}[{fg}m'
 
 
-SEVERE_PREFIX_VIS = 12  # visible width of "⚠ SEVERE ⚠ "
+SEVERE_PREFIX_VIS = 13  # visible width of "⚠ SEVERE ⚠ "
 
 
 def wrap_text(text, text_w):
