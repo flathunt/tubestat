@@ -22,21 +22,21 @@ BOLD  = f'{ESC}[1m'
 BLINK = f'{ESC}[5m'
 
 LINE_COLORS = {
-    'central':          (41, 37),
-    'piccadilly':       (44, 37),
-    'northern':         (47, 30),
-    'district':         (42, 37),
-    'jubilee':          (100, 37),
-    'victoria':         (46, 30),
-    'circle':           (103, 30),
-    'bakerloo':         (43, 37),
-    'metropolitan':     (45, 37),
-    'hammersmith-city': (45, 30),
-    'elizabeth':        (45, 37),
-    'overground':       (43, 30),
-    'dlr':              (46, 30),
+    'central':          ('48;5;1',  '38;5;7'),
+    'piccadilly':       ('48;5;4',  '38;5;7'),
+    'northern':         ('48;5;7',  '38;5;0'),
+    'district':         ('48;5;2',  '38;5;7'),
+    'jubilee':          ('48;5;8',  '38;5;7'),
+    'victoria':         ('48;5;6',  '38;5;0'),
+    'circle':           ('48;5;11', '38;5;0'),
+    'bakerloo':         ('48;5;3',  '38;5;7'),
+    'metropolitan':     ('48;5;5',  '38;5;7'),
+    'hammersmith-city': ('48;5;5',  '38;5;0'),
+    'elizabeth':        ('48;5;5',  '38;5;7'),
+    'overground':       ('48;5;3',  '38;5;0'),
+    'dlr':              ('48;5;6',  '38;5;0'),
 }
-DEFAULT_COLOR = (40, 37)
+DEFAULT_COLOR = ('48;5;0', '38;5;7')
 
 
 def goto(row, col):
