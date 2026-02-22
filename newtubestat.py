@@ -22,22 +22,22 @@ BOLD  = f'{ESC}[1m'
 BLINK = f'{ESC}[5m'
 
 LINE_COLORS = {
-    'bakerloo':         ('48;5;130', '38;5;15'),  # #AF5F00 ≈ #B36305
-    'central':          ('48;5;160', '38;5;15'),  # #D70000 ≈ #E32017
-    'circle':           ('48;5;220', '38;5;16'),  # #FFD700 ≈ #FFD300
-    'district':         ('48;5;28',  '38;5;15'),  # #008700 ≈ #00782A
-    'elizabeth':        ('48;5;61',  '38;5;15'),  # #5F5FAF ≈ #6950A1
-    'hammersmith-city': ('48;5;217', '38;5;16'),  # #FFAFAF ≈ #F3A9BB
-    'jubilee':          ('48;5;145', '38;5;16'),  # #AFAFAF ≈ #A0A5A9
-    'metropolitan':     ('48;5;89',  '38;5;15'),  # #87005F ≈ #9B0056
-    'northern':         ('48;5;16',  '38;5;15'),  # #000000
-    'piccadilly':       ('48;5;24',  '38;5;15'),  # #005F87 ≈ #003688
-    'victoria':         ('48;5;32',  '38;5;15'),  # #0087D7 ≈ #0098D4
-    'waterloo-city':    ('48;5;115', '38;5;16'),  # #87D7AF ≈ #95CDBA
-    'dlr':              ('48;5;37',  '38;5;15'),  # #00AFAF ≈ #00A4A7
-    'overground':       ('48;5;208', '38;5;16'),  # #FF8700 ≈ #EE7C0E
+    'bakerloo':         ('48;2;179;99;5',    '38;2;255;255;255'),  # #B36305
+    'central':          ('48;2;227;32;23',   '38;2;255;255;255'),  # #E32017
+    'circle':           ('48;2;255;211;0',   '38;2;0;0;0'),        # #FFD300
+    'district':         ('48;2;0;120;42',    '38;2;255;255;255'),  # #00782A
+    'elizabeth':        ('48;2;105;80;161',  '38;2;255;255;255'),  # #6950A1
+    'hammersmith-city': ('48;2;243;169;187', '38;2;0;0;0'),        # #F3A9BB
+    'jubilee':          ('48;2;160;165;169', '38;2;0;0;0'),        # #A0A5A9
+    'metropolitan':     ('48;2;155;0;86',    '38;2;255;255;255'),  # #9B0056
+    'northern':         ('48;2;0;0;0',       '38;2;255;255;255'),  # #000000
+    'piccadilly':       ('48;2;0;54;136',    '38;2;255;255;255'),  # #003688
+    'victoria':         ('48;2;0;152;212',   '38;2;255;255;255'),  # #0098D4
+    'waterloo-city':    ('48;2;149;205;186', '38;2;0;0;0'),        # #95CDBA
+    'dlr':              ('48;2;0;164;167',   '38;2;255;255;255'),  # #00A4A7
+    'overground':       ('48;2;238;124;14',  '38;2;0;0;0'),        # #EE7C0E
 }
-DEFAULT_COLOR = ('48;5;0', '38;5;7')
+DEFAULT_COLOR = ('48;2;0;0;0', '38;2;187;187;187')
 
 
 def goto(row, col):
@@ -122,12 +122,20 @@ def draw_screen(disruptions):
     sys.stdout.write('\033[H\033[2J')
 
     # Build items: one card per disruption, plus a timestamp card
-    # Key comes from the first word of the raw description; text has the
-    # "Line Name: " prefix stripped since the card title already shows it.
+    # Key is derived from the "Line Name" prefix before ': ', normalised to
+    # match LINE_COLORS keys (lowercase, "& " and spaces → "-", " line" stripped).
     items = []
     for desc in sorted(set(disruptions)):
-        key = (desc.split()[0] if desc.split() else 'unknown').lower()
-        text = desc.split(': ', 1)[1] if ': ' in desc else desc
+        if ': ' in desc:
+            prefix, text = desc.split(': ', 1)
+            key = (prefix.lower()
+                   .replace(' & ', '-')
+                   .replace(' line', '')
+                   .strip()
+                   .replace(' ', '-'))
+        else:
+            key = (desc.split()[0] if desc.split() else 'unknown').lower()
+            text = desc
         items.append((key, text))
     items.append(('updated', f'Last updated: {now}'))
     random.shuffle(items)
